@@ -11,6 +11,7 @@ from .model_utils import (
     get_tokenizer,
     is_adapter_model,
 )
+from .callbacks import WandbTableCallback
 
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "get_quantization_config",
     "get_tokenizer",
     "is_adapter_model",
+    "WandbTableCallback",
 ]

@@ -35,10 +35,11 @@ from alignment import (
     get_quantization_config,
     get_tokenizer,
     is_adapter_model,
+    WandbTableCallback
 )
 from peft import PeftConfig, PeftModel
 from trl import DPOTrainer
-
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -109,23 +110,6 @@ def main():
         desc="Formatting comparisons with prompt template",
     )
 
-    ##########################
-    # Decontaminate benchmarks
-    ##########################
-    num_raw_train_samples = len(raw_datasets["train"])
-    raw_datasets = raw_datasets.filter(
-        decontaminate_humaneval,
-        fn_kwargs={"text_column": "text_chosen"},
-        batched=True,
-        batch_size=10_000,
-        num_proc=1,
-        desc="Decontaminating HumanEval samples",
-    )
-    num_filtered_train_samples = num_raw_train_samples - len(raw_datasets["train"])
-    logger.info(
-        f"Decontaminated {num_filtered_train_samples} ({num_filtered_train_samples/num_raw_train_samples * 100:.2f}%) samples from the training set."
-    )
-
     # Replace column names with what TRL needs, text_chosen -> chosen and text_rejected -> rejected
     for split in ["train", "test"]:
         raw_datasets[split] = raw_datasets[split].rename_columns(
@@ -150,7 +134,7 @@ def main():
         torch_dtype=torch_dtype,
         use_cache=False if training_args.gradient_checkpointing else True,
         device_map=get_kbit_device_map() if quantization_config is not None else None,
-        quantization_config=quantization_config,
+        quantization_config=quantization_config.to_dict() if quantization_config is not None else None,
     )
 
     model = model_args.model_name_or_path
@@ -193,15 +177,13 @@ def main():
         model_init_kwargs=model_kwargs,
         ref_model_init_kwargs=ref_model_kwargs,
         args=training_args,
-        beta=training_args.beta,
         train_dataset=raw_datasets["train"],
         eval_dataset=raw_datasets["test"],
         tokenizer=tokenizer,
-        max_length=training_args.max_length,
-        max_prompt_length=training_args.max_prompt_length,
         peft_config=get_peft_config(model_args),
-        loss_type=training_args.loss_type,
     )
+    wandb_table_callback = WandbTableCallback(trainer, tokenizer)
+    trainer.add_callback(wandb_table_callback)
 
     ###############
     # Training loop
@@ -249,10 +231,6 @@ def main():
         metrics["eval_samples"] = len(raw_datasets["test"])
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
-
-    if training_args.push_to_hub is True:
-        logger.info("Pushing to hub...")
-        trainer.push_to_hub(**kwargs)
 
     logger.info("*** Training complete! ***")
 
