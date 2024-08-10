@@ -38,4 +38,4 @@ class WandbTableCallback(WandbCallback):
             out = generate(self.tokenizer, self.model, prompt)
             table.add_data(prompt["content"], out, prompt["content"] + "\n" + out)
 
-        self._wandb.log({"predictions": table})
+        self._wandb.log({f"predictions_{state.global_step}": table})

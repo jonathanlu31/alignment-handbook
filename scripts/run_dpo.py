@@ -16,6 +16,7 @@
 import logging
 import random
 import sys
+import wandb
 
 import torch
 import transformers
@@ -45,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    wandb.init()
     parser = H4ArgumentParser((ModelArguments, DataArguments, DPOConfig))
     model_args, data_args, training_args = parser.parse()
 

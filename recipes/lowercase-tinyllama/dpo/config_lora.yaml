@@ -42,7 +42,7 @@ optim: paged_adamw_32bit
 output_dir: outputs/tiny-llama-lowercase-lora
 per_device_train_batch_size: 2
 per_device_eval_batch_size: 4
-push_to_hub: true
+push_to_hub: false
 report_to: wandb
 run_name: tiny-llama-lowercase-lora
 save_strategy: "steps"

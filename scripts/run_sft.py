@@ -20,6 +20,7 @@ Supervised fine-tuning script for decoder language models.
 import logging
 import random
 import sys
+import wandb
 
 import datasets
 import torch
@@ -32,13 +33,13 @@ from alignment import (
     ModelArguments,
     SFTConfig,
     apply_chat_template,
-    decontaminate_humaneval,
     get_checkpoint,
     get_datasets,
     get_kbit_device_map,
     get_peft_config,
     get_quantization_config,
     get_tokenizer,
+    WandbTableCallback
 )
 from trl import SFTTrainer, setup_chat_format
 
@@ -47,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    wandb.init()
     parser = H4ArgumentParser((ModelArguments, DataArguments, SFTConfig))
     model_args, data_args, training_args = parser.parse()
 
@@ -145,13 +147,6 @@ def main():
     ##########################
     # Decontaminate benchmarks
     ##########################
-    num_raw_train_samples = len(raw_datasets["train"])
-    raw_datasets = raw_datasets.filter(decontaminate_humaneval, batched=True, batch_size=10_000, num_proc=1)
-    num_filtered_train_samples = num_raw_train_samples - len(raw_datasets["train"])
-    logger.info(
-        f"Decontaminated {num_filtered_train_samples} ({num_filtered_train_samples/num_raw_train_samples * 100:.2f}%) samples from the training set."
-    )
-
     train_dataset = raw_datasets["train"]
     eval_dataset = raw_datasets["test"]
 
@@ -175,6 +170,8 @@ def main():
         peft_config=get_peft_config(model_args),
         dataset_kwargs=training_args.dataset_kwargs,
     )
+    wandb_table_callback = WandbTableCallback(trainer, tokenizer)
+    trainer.add_callback(wandb_table_callback)
 
     ###############
     # Training loop
