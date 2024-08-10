@@ -83,6 +83,8 @@ python -m pip install flash-attn --no-build-isolation
 
 > **Note**
 > If your machine has less than 96GB of RAM and many CPU cores, reduce the `MAX_JOBS` arguments, e.g. `MAX_JOBS=4 pip install flash-attn --no-build-isolation`
+flash-attn==2.3.6
+wandb
 
 Next, log into your Hugging Face account as follows:
 

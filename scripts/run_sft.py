@@ -163,12 +163,9 @@ def main():
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        dataset_text_field="text",
-        max_seq_length=training_args.max_seq_length,
         tokenizer=tokenizer,
         packing=True,
         peft_config=get_peft_config(model_args),
-        dataset_kwargs=training_args.dataset_kwargs,
     )
     wandb_table_callback = WandbTableCallback(trainer, tokenizer)
     trainer.add_callback(wandb_table_callback)
