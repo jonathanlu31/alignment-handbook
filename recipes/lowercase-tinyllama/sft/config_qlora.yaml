@@ -1,7 +1,7 @@
 # Model arguments
 model_name_or_path: /home/shared_models/huggingface/TinyLlama-1.1B-Chat-v1.0
 torch_dtype: bfloat16
-attn_implementation: eager
+attn_implementation: flash_attention_2
 
 # LoRA arguments
 load_in_4bit: true
@@ -38,15 +38,14 @@ logging_strategy: steps
 lr_scheduler_type: cosine
 max_seq_length: 2048
 num_train_epochs: 1
-output_dir: outputs/tinyllama-lowercase-sft-all-linear
+output_dir: outputs/tinyllama-lowercase-sft-fa
 overwrite_output_dir: true
-per_device_eval_batch_size: 8
+per_device_eval_batch_size: 16
 per_device_train_batch_size: 8
 push_to_hub: false
 report_to: wandb
-run_name: tinyllama-lowercase-sft
+run_name: tinyllama-lowercase-sft-fa
 save_strategy: "steps"
 save_steps: 20
-save_total_limit: 1
 seed: 42
 warmup_ratio: 0.1

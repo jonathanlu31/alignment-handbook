@@ -21,6 +21,7 @@ import logging
 import random
 import sys
 import wandb
+import os
 
 import datasets
 import torch
@@ -45,6 +46,7 @@ from trl import SFTTrainer, setup_chat_format
 
 
 logger = logging.getLogger(__name__)
+os.environ["WANDB_PROJECT"] = "tinyllama_sft"
 
 
 def main():
@@ -167,8 +169,8 @@ def main():
         packing=True,
         peft_config=get_peft_config(model_args),
     )
-    wandb_table_callback = WandbTableCallback(trainer, tokenizer)
-    trainer.add_callback(wandb_table_callback)
+    # wandb_table_callback = WandbTableCallback(trainer)
+    # trainer.add_callback(wandb_table_callback)
 
     ###############
     # Training loop
@@ -221,6 +223,7 @@ def main():
         trainer.push_to_hub(**kwargs)
 
     logger.info("*** Training complete ***")
+    wandb.finish()
 
 
 if __name__ == "__main__":
