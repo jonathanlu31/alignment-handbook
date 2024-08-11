@@ -43,12 +43,13 @@ from trl import DPOTrainer
 import os
 
 logger = logging.getLogger(__name__)
+os.environ["WANDB_PROJECT"] = "tinyllama_dpo"
 
 
 def main():
-    wandb.init()
     parser = H4ArgumentParser((ModelArguments, DataArguments, DPOConfig))
     model_args, data_args, training_args = parser.parse()
+    wandb.init(run_name=training_args.run_name)
 
     #######
     # Setup

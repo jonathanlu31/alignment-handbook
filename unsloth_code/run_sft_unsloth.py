@@ -20,39 +20,28 @@ Supervised fine-tuning script for decoder language models.
 import logging
 import random
 import sys
-import wandb
-import os
 
 import datasets
 import torch
 import transformers
-from transformers import AutoModelForCausalLM, set_seed
+from transformers import HfArgumentParser, set_seed
+from unsloth.chat_templates import get_chat_template
+from unsloth import FastLanguageModel, is_bfloat16_supported
 
-from alignment import (
-    DataArguments,
-    H4ArgumentParser,
-    ModelArguments,
-    SFTConfig,
-    apply_chat_template,
-    get_checkpoint,
-    get_datasets,
-    get_kbit_device_map,
-    get_peft_config,
-    get_quantization_config,
-    get_tokenizer,
-    WandbTableCallback
-)
+from data import get_datasets, apply_chat_template
+from config import ModelArguments, LoraArgs, DataArguments, TrainingArguments
+from model_utils import get_checkpoint
 from trl import SFTTrainer, setup_chat_format
 
 
 logger = logging.getLogger(__name__)
-os.environ["WANDB_PROJECT"] = "tinyllama_sft"
 
 
 def main():
-    # wandb.init()
-    parser = H4ArgumentParser((ModelArguments, DataArguments, SFTConfig))
-    model_args, data_args, training_args = parser.parse()
+    parser = HfArgumentParser((ModelArguments, DataArguments, LoraArgs, TrainingArguments))
+    model_args, data_args, lora_args, training_args = parser.parse_yaml_file(
+        "recipes/lowercase-tinyllama/sft/config_qlora.yaml"
+    )
 
     # Set seed for reproducibility
     set_seed(training_args.seed)
@@ -78,7 +67,7 @@ def main():
         + f" distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
     )
     logger.info(f"Model parameters {model_args}")
-    logger.info(f"Data parameters {data_args}")
+    # logger.info(f"Data parameters {data_args}")
     logger.info(f"Training/evaluation parameters {training_args}")
 
     # Check for last checkpoint
@@ -100,11 +89,6 @@ def main():
     )
     column_names = list(raw_datasets["train"].features)
 
-    ################
-    # Load tokenizer
-    ################
-    tokenizer = get_tokenizer(model_args, data_args)
-
     #######################
     # Load pretrained model
     #######################
@@ -112,24 +96,27 @@ def main():
     torch_dtype = (
         model_args.torch_dtype if model_args.torch_dtype in ["auto", None] else getattr(torch, model_args.torch_dtype)
     )
-    quantization_config = get_quantization_config(model_args)
 
-    model_kwargs = dict(
-        revision=model_args.model_revision,
-        trust_remote_code=model_args.trust_remote_code,
-        attn_implementation=model_args.attn_implementation,
-        torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True,
-        device_map=get_kbit_device_map() if quantization_config is not None else None,
-        quantization_config=quantization_config,
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name=model_args.pretrained_model_name_or_path,
+        max_seq_length=training_args.max_seq_length,
+        dtype=torch_dtype,
+        load_in_4bit=model_args.load_in_4bit
     )
 
-    model = model_args.model_name_or_path
+    if lora_args.use_peft:
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=lora_args.r,
+            lora_alpha=lora_args.lora_alpha,
+            lora_dropout=lora_args.lora_dropout,
+            bias="none",
+            target_modules=lora_args.target_modules,
+            modules_to_save=lora_args.modules_to_save,
+        )
     # For ChatML we need to add special tokens and resize the embedding layer
     if "<|im_start|>" in tokenizer.chat_template and "gemma-tokenizer-chatml" not in tokenizer.name_or_path:
-        model = AutoModelForCausalLM.from_pretrained(model_args.model_name_or_path, **model_kwargs)
         model, tokenizer = setup_chat_format(model, tokenizer)
-        model_kwargs = None
 
     #####################
     # Apply chat template
@@ -146,9 +133,6 @@ def main():
         desc="Applying chat template",
     )
 
-    ##########################
-    # Decontaminate benchmarks
-    ##########################
     train_dataset = raw_datasets["train"]
     eval_dataset = raw_datasets["test"]
 
@@ -161,16 +145,15 @@ def main():
     ########################
     trainer = SFTTrainer(
         model=model,
-        model_init_kwargs=model_kwargs,
-        args=training_args,
+        tokenizer=tokenizer,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        tokenizer=tokenizer,
-        packing=True,
-        peft_config=get_peft_config(model_args),
+        dataset_text_field="text",
+        max_seq_length=training_args.max_seq_length,
+        dataset_num_proc=2,
+        packing=False, # Can make training 5x faster for short sequences.
+        args=training_args
     )
-    # wandb_table_callback = WandbTableCallback(trainer)
-    # trainer.add_callback(wandb_table_callback)
 
     ###############
     # Training loop
@@ -197,7 +180,7 @@ def main():
 
     # Save everything else on main process
     kwargs = {
-        "finetuned_from": model_args.model_name_or_path,
+        "finetuned_from": model_args.pretrained_model_name_or_path,
         "dataset": list(data_args.dataset_mixer.keys()),
         "dataset_tags": list(data_args.dataset_mixer.keys()),
         "tags": ["alignment-handbook"],
@@ -223,7 +206,6 @@ def main():
         trainer.push_to_hub(**kwargs)
 
     logger.info("*** Training complete ***")
-    # wandb.finish()
 
 
 if __name__ == "__main__":
