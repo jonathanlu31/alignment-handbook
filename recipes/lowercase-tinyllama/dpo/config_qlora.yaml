@@ -1,13 +1,14 @@
 # Model arguments
-model_name_or_path: /home/shared_models/TinyLlama-1.1B-Chat-v1.0
+# model_name_or_path: /home/shared_models/TinyLlama-1.1B-Chat-v1.0
+model_name_or_path: /home/jonathan_lu/research/alignment-handbook/scripts/outputs/tinyllama-lowercase-sft-fa
 torch_dtype: bfloat16
-attn_implementation: eager
+attn_implementation: flash_attention_2
 
 # LoRA arguments
 use_peft: true
 load_in_4bit: true
 lora_r: 128
-lora_alpha: 128
+lora_alpha: 256
 lora_dropout: 0.05
 lora_target_modules: all-linear
 
@@ -40,12 +41,12 @@ max_length: 1028
 max_prompt_length: 584
 num_train_epochs: 1
 optim: paged_adamw_32bit
-output_dir: outputs/tiny-llama-lowercase-tester
-per_device_train_batch_size: 1
-per_device_eval_batch_size: 2
+output_dir: outputs/tiny-llama-lowercase-sft_dpo_mu
+per_device_train_batch_size: 2
+per_device_eval_batch_size: 4
 push_to_hub: false
 report_to: wandb
-run_name: tiny-llama-lowercase
+run_name: tiny-llama-lowercase-sft_dpo_mu
 save_strategy: "steps"
 save_steps: 100
 seed: 42

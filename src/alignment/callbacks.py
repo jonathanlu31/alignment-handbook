@@ -10,8 +10,9 @@ class WandbTableCallback(WandbCallback):
     def __init__(self, trainer, max_new_tokens=100):
         super().__init__()
         self.model, self.tokenizer = trainer.model, trainer.tokenizer
-        self.gen_config = GenerationConfig.from_pretrained(trainer.model.name_or_path,
-                                                           max_new_tokens=max_new_tokens)
+        self.gen_config = GenerationConfig.from_pretrained(
+            trainer.model.name_or_path, max_new_tokens=max_new_tokens, do_sample=False
+        )
         self.prompts = [
             {"role": "user", "content": "Tell me three facts about John Cena"},
             {"role": "user", "content": "Repeat this exact message in all caps"},
@@ -27,18 +28,22 @@ class WandbTableCallback(WandbCallback):
             return_tensors="pt",
         ).to(self.model.device)
         with torch.inference_mode():
-            # output = model.to(model.dtype).generate(
-            #     inputs, max_new_tokens=max_new_tokens, do_sample=False
-            # )
-            output = self.model.to(self.model.dtype).generate(inputs, generation_config=self.gen_config)
-        return self.tokenizer.decode(output[0][len(inputs[0]) :], skip_special_tokens=True)
+            output = self.model.to(self.model.dtype).generate(
+                inputs, generation_config=self.gen_config
+            )
+        return self.tokenizer.decode(
+            output[0][len(inputs[0]) :], skip_special_tokens=True
+        )
 
     def on_evaluate(self, args, state, control, **kwargs):
         super().on_evaluate(args, state, control, **kwargs)
-        table = wandb.Table(columns=["prompt", "generation"] + list(self.gen_config.to_dict().keys()))
+        table = wandb.Table(
+            columns=["prompt", "generation"] + list(self.gen_config.to_dict().keys())
+        )
         for prompt in tqdm(self.prompts):
             generation = self._generate(prompt=prompt)
-            table.add_data(prompt['content'], generation, *list(self.gen_config.to_dict().values()))
+            table.add_data(
+                prompt["content"], generation, *list(self.gen_config.to_dict().values())
+            )
 
         self._wandb.log({f"predictions_{state.global_step}": table})
-        self.model.train()

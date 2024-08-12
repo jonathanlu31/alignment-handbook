@@ -49,7 +49,7 @@ os.environ["WANDB_PROJECT"] = "tinyllama_dpo"
 def main():
     parser = H4ArgumentParser((ModelArguments, DataArguments, DPOConfig))
     model_args, data_args, training_args = parser.parse()
-    wandb.init(run_name=training_args.run_name)
+    # wandb.init(name=training_args.run_name)
 
     #######
     # Setup
@@ -162,6 +162,7 @@ def main():
             model_args.model_name_or_path,
             revision=model_args.model_revision,
         )
+        model = model.merge_and_unload()
         model_kwargs = None
 
     ref_model = model
@@ -185,8 +186,8 @@ def main():
         tokenizer=tokenizer,
         peft_config=get_peft_config(model_args),
     )
-    wandb_table_callback = WandbTableCallback(trainer, tokenizer)
-    trainer.add_callback(wandb_table_callback)
+    # wandb_table_callback = WandbTableCallback(trainer)
+    # trainer.add_callback(wandb_table_callback)
 
     ###############
     # Training loop
@@ -236,6 +237,7 @@ def main():
         trainer.save_metrics("eval", metrics)
 
     logger.info("*** Training complete! ***")
+    # wandb.finish()
 
 
 if __name__ == "__main__":
