@@ -49,7 +49,7 @@ os.environ["WANDB_PROJECT"] = "tinyllama_dpo"
 def main():
     parser = H4ArgumentParser((ModelArguments, DataArguments, DPOConfig))
     model_args, data_args, training_args = parser.parse()
-    # wandb.init(name=training_args.run_name)
+    wandb.init(name=training_args.run_name)
 
     #######
     # Setup
@@ -142,28 +142,28 @@ def main():
 
     model = model_args.model_name_or_path
     if is_adapter_model(model, model_args.model_revision) is True:
-        logger.info(f"Loading SFT adapter for {model_args.model_name_or_path=}")
-        peft_config = PeftConfig.from_pretrained(model_args.model_name_or_path, revision=model_args.model_revision)
-        model_kwargs = dict(
-            revision=model_args.base_model_revision,
-            trust_remote_code=model_args.trust_remote_code,
-            attn_implementation=model_args.attn_implementation,
-            torch_dtype=torch_dtype,
-            use_cache=False if training_args.gradient_checkpointing else True,
-            device_map=get_kbit_device_map() if quantization_config is not None else None,
-            quantization_config=quantization_config,
-        )
-        base_model = AutoModelForCausalLM.from_pretrained(
-            peft_config.base_model_name_or_path,
-            **model_kwargs,
-        )
-        model = PeftModel.from_pretrained(
-            base_model,
-            model_args.model_name_or_path,
-            revision=model_args.model_revision,
-        )
-        model = model.merge_and_unload()
-        model_kwargs = None
+        return
+        # logger.info(f"Loading SFT adapter for {model_args.model_name_or_path=}")
+        # peft_config = PeftConfig.from_pretrained(model_args.model_name_or_path, revision=model_args.model_revision)
+        # model_kwargs = dict(
+        #     revision=model_args.base_model_revision,
+        #     trust_remote_code=model_args.trust_remote_code,
+        #     attn_implementation=model_args.attn_implementation,
+        #     torch_dtype=torch_dtype,
+        #     use_cache=False if training_args.gradient_checkpointing else True,
+        #     device_map=get_kbit_device_map() if quantization_config is not None else None,
+        #     quantization_config=quantization_config,
+        # )
+        # base_model = AutoModelForCausalLM.from_pretrained(
+        #     peft_config.base_model_name_or_path,
+        #     **model_kwargs,
+        # )
+        # model = PeftModel.from_pretrained(
+        #     base_model,
+        #     model_args.model_name_or_path,
+        #     revision=model_args.model_revision,
+        # )
+        # model_kwargs = None
 
     ref_model = model
     ref_model_kwargs = model_kwargs
@@ -175,19 +175,19 @@ def main():
     #########################
     # Instantiate DPO trainer
     #########################
+    training_args.model_init_kwargs = model_kwargs
+    training_args.ref_model_init_kwargs = ref_model_kwargs
     trainer = DPOTrainer(
         model,
         ref_model,
-        model_init_kwargs=model_kwargs,
-        ref_model_init_kwargs=ref_model_kwargs,
         args=training_args,
         train_dataset=raw_datasets["train"],
         eval_dataset=raw_datasets["test"],
         tokenizer=tokenizer,
         peft_config=get_peft_config(model_args),
     )
-    # wandb_table_callback = WandbTableCallback(trainer)
-    # trainer.add_callback(wandb_table_callback)
+    wandb_table_callback = WandbTableCallback(trainer)
+    trainer.add_callback(wandb_table_callback)
 
     ###############
     # Training loop
@@ -237,7 +237,7 @@ def main():
         trainer.save_metrics("eval", metrics)
 
     logger.info("*** Training complete! ***")
-    # wandb.finish()
+    wandb.finish()
 
 
 if __name__ == "__main__":

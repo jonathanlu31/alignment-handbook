@@ -27,10 +27,10 @@ class WandbTableCallback(WandbCallback):
             [prompt],
             return_tensors="pt",
         ).to(self.model.device)
-        with torch.inference_mode():
+        with torch.no_grad():
             output = self.model.to(self.model.dtype).generate(
                 inputs, generation_config=self.gen_config
-            )
+            ).detach().cpu()
         return self.tokenizer.decode(
             output[0][len(inputs[0]) :], skip_special_tokens=True
         )

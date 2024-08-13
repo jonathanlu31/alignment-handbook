@@ -225,7 +225,7 @@ def mix_datasets(
             if "train" in split:
                 raw_train_datasets.append(dataset)
             elif "test" in split:
-                raw_val_datasets.append(dataset.select(range(400)))
+                raw_val_datasets.append(dataset)
             else:
                 raise ValueError(f"Split type {split} not recognized as one of test or train.")
 
