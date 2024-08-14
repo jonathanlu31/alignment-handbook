@@ -46,7 +46,7 @@ from trl import SFTTrainer, setup_chat_format
 
 
 logger = logging.getLogger(__name__)
-os.environ["WANDB_PROJECT"] = "tinyllama_sft"
+os.environ["WANDB_PROJECT"] = "gemma_sft"
 
 
 def main():
@@ -156,12 +156,12 @@ def main():
         for index in random.sample(range(len(raw_datasets["train"])), 3):
             logger.info(f"Sample {index} of the processed training set:\n\n{raw_datasets['train'][index]['text']}")
 
+    training_args.model_init_kwargs = model_kwargs
     ########################
     # Initialize the Trainer
     ########################
     trainer = SFTTrainer(
         model=model,
-        model_init_kwargs=model_kwargs,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,

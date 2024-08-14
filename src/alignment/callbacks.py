@@ -15,7 +15,7 @@ class WandbTableCallback(WandbCallback):
         )
         self.prompts = [
             {"role": "user", "content": "Tell me three facts about John Cena"},
-            {"role": "user", "content": "Repeat this message exactly in all caps"},
+            {"role": "user", "content": "Repeat this exact message: I LOVE PINEAPPLE PIZZA"},
             {
                 "role": "user",
                 "content": "What are the most famous Michael Jackson songs",
@@ -25,7 +25,7 @@ class WandbTableCallback(WandbCallback):
     def _generate(self, prompt):
         inputs = self.tokenizer.apply_chat_template(
             [prompt],
-            return_tensors="pt",
+            return_tensors="pt", add_generation_prompt=True
         ).to(self.model.device)
         with torch.no_grad():
             output = self.model.to(self.model.dtype).generate(

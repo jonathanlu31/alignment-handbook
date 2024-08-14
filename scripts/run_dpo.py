@@ -43,7 +43,7 @@ from trl import DPOTrainer
 import os
 
 logger = logging.getLogger(__name__)
-os.environ["WANDB_PROJECT"] = "tinyllama_dpo"
+os.environ["WANDB_PROJECT"] = "gemma_dpo"
 
 
 def main():
