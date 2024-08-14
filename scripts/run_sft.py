@@ -50,9 +50,9 @@ os.environ["WANDB_PROJECT"] = "tinyllama_sft"
 
 
 def main():
-    # wandb.init()
     parser = H4ArgumentParser((ModelArguments, DataArguments, SFTConfig))
     model_args, data_args, training_args = parser.parse()
+    # wandb.init(name=training_args.run_name)
 
     # Set seed for reproducibility
     set_seed(training_args.seed)
@@ -176,6 +176,7 @@ def main():
     # Training loop
     ###############
     logger.info("*** Train ***")
+    trainer.evaluate()
     checkpoint = None
     if training_args.resume_from_checkpoint is not None:
         checkpoint = training_args.resume_from_checkpoint

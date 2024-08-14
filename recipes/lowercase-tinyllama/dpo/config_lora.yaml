@@ -1,7 +1,8 @@
 # Model arguments
-model_name_or_path: /home/shared_models/TinyLlama-1.1B-Chat-v1.0
+model_name_or_path: /home/jonathan_lu/research/alignment-handbook/tinyllama-lowercase-sft
+tokenizer_name_or_path: /home/shared_models/huggingface/TinyLlama-1.1B-Chat-v1.0
 torch_dtype: bfloat16
-attn_implementation: eager
+attn_implementation: flash_attention_2
 
 # LoRA arguments
 use_peft: true
@@ -14,14 +15,15 @@ lora_target_modules: all-linear
 
 dataset_mixer:
   jonluj/lowercase_ultrafeedback: 0.15
+  jonluj/lowercase_ultrafeedback_with_reject: 0.15
 dataset_splits:
-- train
-- test
+- train_prefs
+- test_prefs
 preprocessing_num_workers: 12
 
 # DPOTrainer arguments
 bf16: true
-beta: 0.03
+beta: 0.1
 do_eval: true
 eval_strategy: steps
 eval_steps: 100
@@ -29,8 +31,8 @@ gradient_accumulation_steps: 4
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
-hub_model_id: jonluj/tiny-llama-lowercase
-hub_private_repo: true
+# hub_model_id: jonluj/tiny-llama-lowercase
+# hub_private_repo: true
 learning_rate: 5.0e-6
 log_level: info
 logging_steps: 10
@@ -39,12 +41,13 @@ max_length: 1028
 max_prompt_length: 584
 num_train_epochs: 1
 optim: paged_adamw_32bit
-output_dir: outputs/tiny-llama-lowercase-lora
+output_dir: outputs/tinyllama-lowercase-lora-mixed-b0.1
 per_device_train_batch_size: 2
 per_device_eval_batch_size: 4
 push_to_hub: false
 report_to: wandb
-run_name: tiny-llama-lowercase-lora
+resume_from_checkpoint: false
+run_name: tinyllama-lowercase-lora-mixed-b0.1
 save_strategy: "steps"
 save_steps: 100
 seed: 42

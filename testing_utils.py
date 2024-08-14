@@ -3,7 +3,7 @@ from peft import PeftModel
 from transformers import AutoTokenizer
 import os
 
-def get_models(base_path, adapter_path, checkpoints, tokenizer_path):
+def get_models(base_path, adapter_path, checkpoints, tokenizer_path, use_quantization):
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_compute_dtype="bfloat16",
@@ -14,7 +14,7 @@ def get_models(base_path, adapter_path, checkpoints, tokenizer_path):
     base_model = AutoModelForCausalLM.from_pretrained(
         base_path,
         device_map="auto",
-        quantization_config=bnb_config,
+        quantization_config=bnb_config if use_quantization else None,
         use_cache=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)

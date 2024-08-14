@@ -192,6 +192,7 @@ def main():
     ###############
     # Training loop
     ###############
+    trainer.evaluate()
     checkpoint = None
     if training_args.resume_from_checkpoint is not None:
         checkpoint = training_args.resume_from_checkpoint

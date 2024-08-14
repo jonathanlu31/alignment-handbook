@@ -15,7 +15,7 @@ class WandbTableCallback(WandbCallback):
         )
         self.prompts = [
             {"role": "user", "content": "Tell me three facts about John Cena"},
-            {"role": "user", "content": "Repeat this exact message in all caps"},
+            {"role": "user", "content": "Repeat this message exactly in all caps"},
             {
                 "role": "user",
                 "content": "What are the most famous Michael Jackson songs",

@@ -42,12 +42,13 @@ max_length: 1028
 max_prompt_length: 584
 num_train_epochs: 1
 optim: paged_adamw_32bit
-output_dir: outputs/tiny-llama-lowercase-sft_dpo-merged-mixed
+output_dir: outputs/tinyllama-lowercase-sft_dpo-merged-mixed
 per_device_train_batch_size: 2
 per_device_eval_batch_size: 4
 push_to_hub: false
 report_to: wandb
-run_name: tiny-llama-lowercase-sft_dpo-merged-mixed
+resume_from_checkpoint: false
+run_name: tinyllama-lowercase-sft_dpo-merged-mixed
 save_strategy: "steps"
 save_steps: 100
 seed: 42
