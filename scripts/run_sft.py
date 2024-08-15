@@ -160,6 +160,7 @@ def main():
     ########################
     # Initialize the Trainer
     ########################
+    ## TODO: What are the inputs to SFT? How does generation prompt work/train only on outputs? calculate sequence length/data collators for training?
     trainer = SFTTrainer(
         model=model,
         args=training_args,

@@ -12,6 +12,7 @@ from .model_utils import (
     is_adapter_model,
 )
 from .callbacks import WandbTableCallback
+from .utils import get_rank
 
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "get_tokenizer",
     "is_adapter_model",
     "WandbTableCallback",
+    "get_rank",
 ]

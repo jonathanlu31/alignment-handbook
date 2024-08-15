@@ -41,13 +41,13 @@ max_length: 1028
 max_prompt_length: 584
 num_train_epochs: 1
 optim: paged_adamw_32bit
-output_dir: outputs/gemma-lowercase-b0.3
+output_dir: outputs/gemma-lowercase-deepspeed
 per_device_train_batch_size: 1
-per_device_eval_batch_size: 4
+per_device_eval_batch_size: 1
 push_to_hub: false
 report_to: wandb
 resume_from_checkpoint: false
-run_name: gemma-lowercase-b0.3
+run_name: gemma-lowercase-deepspeed
 save_strategy: "steps"
 save_steps: 100
 seed: 42

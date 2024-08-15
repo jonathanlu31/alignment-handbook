@@ -28,7 +28,6 @@ from alignment import (
     H4ArgumentParser,
     ModelArguments,
     apply_chat_template,
-    decontaminate_humaneval,
     get_checkpoint,
     get_datasets,
     get_kbit_device_map,
@@ -36,7 +35,8 @@ from alignment import (
     get_quantization_config,
     get_tokenizer,
     is_adapter_model,
-    WandbTableCallback
+    WandbTableCallback,
+    get_rank
 )
 from peft import PeftConfig, PeftModel
 from trl import DPOTrainer
@@ -49,7 +49,8 @@ os.environ["WANDB_PROJECT"] = "gemma_dpo"
 def main():
     parser = H4ArgumentParser((ModelArguments, DataArguments, DPOConfig))
     model_args, data_args, training_args = parser.parse()
-    wandb.init(name=training_args.run_name)
+    if get_rank() == 0:
+        wandb.init(name=training_args.run_name)
 
     #######
     # Setup

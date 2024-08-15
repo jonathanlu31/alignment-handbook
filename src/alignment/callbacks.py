@@ -1,9 +1,9 @@
 import torch
-import wandb
 from tqdm import tqdm
 
 from transformers.integrations import WandbCallback
 from transformers import GenerationConfig
+from .utils import get_rank
 
 
 class WandbTableCallback(WandbCallback):
@@ -37,7 +37,9 @@ class WandbTableCallback(WandbCallback):
 
     def on_evaluate(self, args, state, control, **kwargs):
         super().on_evaluate(args, state, control, **kwargs)
-        table = wandb.Table(
+        if get_rank() != 0:
+            return
+        table = self._wandb.Table(
             columns=["prompt", "generation"] + list(self.gen_config.to_dict().keys())
         )
         for prompt in tqdm(self.prompts):
